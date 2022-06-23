@@ -2,7 +2,7 @@
 
 domstat is [httpstat](https://github.com/reorx/httpstat) for dom events
 
-It is based on measuring [critical rendering path](https://web.dev/critical-rendering-path-measure-crp/) of a webpage
+Helps in measuring [critical rendering path](https://web.dev/critical-rendering-path-measure-crp/) of a webpage
 
 ## Example output
 
