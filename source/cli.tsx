@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import React, {FC} from 'react';
-import {Newline, Text, Box} from 'ink';
+import {Newline, Text, Box, useApp} from 'ink';
 import puppeteer from 'puppeteer';
 import {render} from 'ink';
 import meow from 'meow';
@@ -37,6 +37,7 @@ type PerfObj = {
 
 const App: FC<AppTypes> = ({url = 'www.example.com' }) => {
 	const [result, setResult] = React.useState<null | PerfObj>(null)
+	const { exit } = useApp()
 
 	async function getResults() {
 		const browser = await puppeteer.launch({ headless: true });
@@ -57,12 +58,13 @@ const App: FC<AppTypes> = ({url = 'www.example.com' }) => {
 			total: p[0].duration.toFixed(2),
 		}
 		setResult(perfObj)
+		exit()
 	}
 
 	if (result === null) {
 		getResults()
 		return (
-			<Text color="green">Getting DOM statistics for {url}...</Text>
+			<Text color="green">Getting DOM timings for {url}...</Text>
 		)
 	}
 
@@ -155,7 +157,12 @@ const App: FC<AppTypes> = ({url = 'www.example.com' }) => {
 
 	}
 
-	return null;
+	return <></>;
 }
 
-render(<App url={cli.flags.url}/>);
+(async function () {
+	const { waitUntilExit, unmount } = render(<App url={cli.flags.url}/>);
+	await waitUntilExit()
+	await unmount()
+	process.exit()
+})()
