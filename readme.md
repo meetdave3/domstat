@@ -11,7 +11,7 @@ Helps in measuring [critical rendering path](https://web.dev/critical-rendering-
 ## Install
 
 ```bash
-$ npm install --global domstat
+npm install --global domstat
 ```
 
 
