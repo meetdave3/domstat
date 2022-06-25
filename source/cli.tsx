@@ -99,6 +99,8 @@ const App: FC<AppTypes> = ({url = 'www.example.com' }) => {
 		let jsUsedBytes = 0;
 		let totalCssBytes = 0;
 		let cssUsedBytes = 0;
+		let jsCoveragePerc = 0;
+		let cssCoveragePerc = 0;
 
 		for (const entry of jsCoverage) {
 			totalJsBytes += entry.text.length;
@@ -109,9 +111,12 @@ const App: FC<AppTypes> = ({url = 'www.example.com' }) => {
 			for (const range of entry.ranges) cssUsedBytes += range.end - range.start - 1;
 		}
 
-		
-		const jsCoveragePerc = +((jsUsedBytes / totalJsBytes) * 100).toFixed(2)
-		const cssCoveragePerc = +((cssUsedBytes / totalCssBytes) * 100).toFixed(2)
+		if (totalJsBytes > 0) {
+			jsCoveragePerc = +((jsUsedBytes / totalJsBytes) * 100).toFixed(2)
+		}
+		if (totalCssBytes > 0) {
+			cssCoveragePerc = +((cssUsedBytes / totalCssBytes) * 100).toFixed(2)
+		}
 		
 		const p = JSON.parse(
 			await page.evaluate(() => JSON.stringify(window.performance.getEntriesByType('navigation')))
