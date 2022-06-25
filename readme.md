@@ -1,8 +1,8 @@
 # domstat
 
-domstat is [httpstat](https://github.com/reorx/httpstat) for dom events
+domstat is like [httpstat](https://github.com/reorx/httpstat) but for dom events
 
-Helps in measuring [critical rendering path](https://web.dev/critical-rendering-path-measure-crp/) of a webpage
+Helps in measuring [critical rendering path](https://web.dev/critical-rendering-path-measure-crp/) of a webpage & reports other browser timings & metrics
 
 ## Example output
 
