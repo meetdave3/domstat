@@ -22,12 +22,15 @@ $ domstat --help
 
   Usage
 	  $ domstat
-
+	
 	Options
 		--url  String. Url to test. Default is www.example.com
 		--headless  Boolean. Pass flag to run test in headless mode
 
 	Examples
 	  $ domstat --url=example.com --headless
+
+	Check version
+		$ domstat --version
 
 ```
