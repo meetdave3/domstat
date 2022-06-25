@@ -6,7 +6,7 @@ Helps in measuring [critical rendering path](https://web.dev/critical-rendering-
 
 ## Example output
 
-![](https://i.ibb.co/rwX5KPP/Screenshot-2022-06-23-at-20-54-48.png)
+![](https://i.ibb.co/NsFkC54/Screenshot-2022-06-26-at-00-07-39.png)
 
 ## Install
 
