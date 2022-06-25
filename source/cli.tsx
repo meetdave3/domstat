@@ -128,8 +128,12 @@ const App: FC<AppTypes> = ({url = 'www.example.com' }) => {
 			await page.evaluate(() => JSON.stringify(window.performance.getEntriesByType('paint')))
 		);
 
-		const resourceLoadingComplete = a[a.length - 1].responseEnd.toFixed(2)
-		const numberOfRequests = a.length
+		let resourceLoadingComplete = 0
+		let numberOfRequests = 0
+		if (a.length > 0) {
+			resourceLoadingComplete = a[a.length - 1].responseEnd.toFixed(2)
+			numberOfRequests = a.length
+		}
 
 		const fcp = t[1].startTime.toFixed(2)
 
@@ -175,12 +179,12 @@ const App: FC<AppTypes> = ({url = 'www.example.com' }) => {
 			<Text>
 				Document transfer size: <Text color="green">{size}</Text>
 			</Text>
-			<Text>
+			{r.resourceLoadingComplete && <Text>
 				Resource loading complete: <Text color="green">{r.resourceLoadingComplete}ms</Text>
-			</Text>
-			<Text>
+			</Text>}
+			{r.resourceLoadingComplete && <Text>
 				Requests: <Text color="green">{r.numberOfRequests}</Text>
-			</Text>
+			</Text>}
 			<Text>
 				First contentful paint: <Text color="green">{r.fcp}ms</Text>
 			</Text>
