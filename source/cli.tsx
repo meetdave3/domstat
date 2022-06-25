@@ -37,7 +37,11 @@ type PerfObj = {
 	nextHopProtocol: string,
 	resourceLoadingComplete: number,
 	numberOfRequests: number,
-	fcp: number
+	fcp: number,
+	totalJsBytes: string,
+	jsCoveragePerc: number
+	totalCssBytes: string,
+	cssCoveragePerc: number,
 }
 
 
@@ -80,7 +84,36 @@ const App: FC<AppTypes> = ({url = 'www.example.com' }) => {
 		const page = await browser.newPage();
 		await page.setViewport({ width: 1366, height: 768});
 		await page.setCacheEnabled(false);
+		await Promise.all([
+			page.coverage.startJSCoverage(),
+			page.coverage.startCSSCoverage(),
+		]);
 		await page.goto(parsedUrl, {waitUntil: ['load', 'domcontentloaded', 'networkidle0', 'networkidle2'], timeout: 0});
+		
+		const [jsCoverage, cssCoverage] = await Promise.all([
+			page.coverage.stopJSCoverage(),
+			page.coverage.stopCSSCoverage(),
+		]);
+
+		let totalJsBytes = 0;
+		let jsUsedBytes = 0;
+		let totalCssBytes = 0;
+		let cssUsedBytes = 0;
+
+		for (const entry of jsCoverage) {
+			totalJsBytes += entry.text.length;
+			for (const range of entry.ranges) jsUsedBytes += range.end - range.start - 1;
+		}
+		for (const entry of cssCoverage) {
+			totalCssBytes += entry.text.length;
+			for (const range of entry.ranges) cssUsedBytes += range.end - range.start - 1;
+		}
+
+		
+		const jsCoveragePerc = +((jsUsedBytes / totalJsBytes) * 100).toFixed(2)
+		const cssCoveragePerc = +((cssUsedBytes / totalCssBytes) * 100).toFixed(2)
+		
+		console.log({totalJsBytes, totalCssBytes, jsUsedBytes, cssUsedBytes})
 		
 		const p = JSON.parse(
 			await page.evaluate(() => JSON.stringify(window.performance.getEntriesByType('navigation')))
@@ -106,11 +139,13 @@ const App: FC<AppTypes> = ({url = 'www.example.com' }) => {
 			total: p[0].duration.toFixed(2),
 			transferSize: p[0].transferSize.toFixed(2),
 			nextHopProtocol: p[0].nextHopProtocol,
-			requestStart: p[0].requestStart.toFixed(2),
-			responseStart: p[0].responseStart.toFixed(2),
 			resourceLoadingComplete,
 			numberOfRequests,
-			fcp
+			fcp,
+			totalJsBytes: convertBytes(totalJsBytes.toString()),
+			jsCoveragePerc,
+			totalCssBytes: convertBytes(totalCssBytes.toString()),
+			cssCoveragePerc,
 		}
 		setR(perfObj)
 		exit()
@@ -141,10 +176,16 @@ const App: FC<AppTypes> = ({url = 'www.example.com' }) => {
 				Resource loading complete: <Text color="green">{r.resourceLoadingComplete}ms</Text>
 			</Text>
 			<Text>
-				Page requests count: <Text color="green">{r.numberOfRequests}</Text>
+				Requests: <Text color="green">{r.numberOfRequests}</Text>
 			</Text>
 			<Text>
 				First contentful paint: <Text color="green">{r.fcp}ms</Text>
+			</Text>
+			<Text>
+				Total Javscript size / Coverage (used bytes): <Text color="green">{r.totalJsBytes} / {r.jsCoveragePerc}%</Text>
+			</Text>
+			<Text>
+				Total CSS size / Coverage (used bytes): <Text color="green">{r.totalCssBytes} / {r.cssCoveragePerc}%</Text>
 			</Text>
 
 			<Box>
