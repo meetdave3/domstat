@@ -138,14 +138,14 @@ const App: FC<AppTypes> = ({url = 'www.example.com' }) => {
 		const fcp = t[1].startTime.toFixed(2)
 
 		const perfObj = {
-			responseEnd: p[0].responseEnd.toFixed(2),
-			domInteractive: p[0].domInteractive.toFixed(2),
-			domContentLoadedEventStart: p[0].domContentLoadedEventStart.toFixed(2),
-			domContentLoadedEventEnd: p[0].domContentLoadedEventEnd.toFixed(2),
-			domComplete: p[0].domComplete.toFixed(2),
-			total: p[0].duration.toFixed(2),
-			transferSize: p[0].transferSize.toFixed(2),
-			nextHopProtocol: p[0].nextHopProtocol,
+			responseEnd: p?.[0].responseEnd.toFixed(2),
+			domInteractive: p?.[0].domInteractive.toFixed(2),
+			domContentLoadedEventStart: p?.[0].domContentLoadedEventStart.toFixed(2),
+			domContentLoadedEventEnd: p?.[0].domContentLoadedEventEnd.toFixed(2),
+			domComplete: p?.[0].domComplete.toFixed(2),
+			total: p?.[0].duration.toFixed(2),
+			transferSize: p?.[0].transferSize.toFixed(2),
+			nextHopProtocol: p?.[0].nextHopProtocol,
 			resourceLoadingComplete,
 			numberOfRequests,
 			fcp,
@@ -154,6 +154,7 @@ const App: FC<AppTypes> = ({url = 'www.example.com' }) => {
 			totalCssBytes: convertBytes(totalCssBytes.toString()),
 			cssCoveragePerc,
 		}
+
 		setR(perfObj)
 		exit()
 	}
@@ -174,17 +175,17 @@ const App: FC<AppTypes> = ({url = 'www.example.com' }) => {
 				URL: <Text color="green">{parsedUrl}</Text>
 			</Text>
 			<Text>
-				Protocol: <Text color="green">{r.nextHopProtocol}</Text>
+				Protocol: <Text color="green">{r.nextHopProtocol || ''}</Text>
 			</Text>
 			<Text>
-				Document transfer size: <Text color="green">{size}</Text>
+				Document transfer size: <Text color="green">{size || ''}</Text>
 			</Text>
-			{r.resourceLoadingComplete && <Text>
+			<Text>
 				Resource loading complete: <Text color="green">{r.resourceLoadingComplete}ms</Text>
-			</Text>}
-			{r.resourceLoadingComplete && <Text>
-				Requests: <Text color="green">{r.numberOfRequests}</Text>
-			</Text>}
+			</Text>
+			<Text>
+				Requests: <Text color="green">{r.numberOfRequests || 0}</Text>
+			</Text>
 			<Text>
 				First contentful paint: <Text color="green">{r.fcp}ms</Text>
 			</Text>
