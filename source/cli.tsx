@@ -113,8 +113,6 @@ const App: FC<AppTypes> = ({url = 'www.example.com' }) => {
 		const jsCoveragePerc = +((jsUsedBytes / totalJsBytes) * 100).toFixed(2)
 		const cssCoveragePerc = +((cssUsedBytes / totalCssBytes) * 100).toFixed(2)
 		
-		console.log({totalJsBytes, totalCssBytes, jsUsedBytes, cssUsedBytes})
-		
 		const p = JSON.parse(
 			await page.evaluate(() => JSON.stringify(window.performance.getEntriesByType('navigation')))
 		);
