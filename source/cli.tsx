@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import React, {FC} from 'react';
-import {Newline, Text, Box, useApp} from 'ink';
+import { Text, Box, useApp} from 'ink';
 import puppeteer from 'puppeteer';
 import {render} from 'ink';
 import meow from 'meow';
@@ -33,21 +33,69 @@ type PerfObj = {
 	domContentLoadedEventEnd: number,
 	domComplete: number,
 	total: number,
+	transferSize: number,
+	nextHopProtocol: string,
+	resourceLoadingComplete: number,
+	numberOfRequests: number,
+	fcp: number
+}
+
+
+
+function setUrl(url: string): string {
+	if (url.startsWith('https://')) {
+		return url
+	}
+
+	if (url.startsWith('http://')) {
+		return url.replace('http://', 'https://')
+	}
+
+	if (!url.startsWith('https://')) {
+		return `https://${url}`
+	}
+
+	return url;
+
+}
+   
+function convertBytes(x: string): string {
+	const units = ['bytes', 'kB', 'mB'];
+  let l = 0, n = parseInt(x, 10) || 0;
+
+  while(n >= 1024 && ++l){
+      n = n/1024;
+  }
+  
+  return(n.toFixed(n < 10 && l > 0 ? 1 : 0) + ' ' + units[l]);
 }
 
 const App: FC<AppTypes> = ({url = 'www.example.com' }) => {
-	const [result, setResult] = React.useState<null | PerfObj>(null)
+	const [r, setR] = React.useState<null | PerfObj>(null)
 	const { exit } = useApp()
+	const parsedUrl = setUrl(url)
 
 	async function getResults() {
 		const browser = await puppeteer.launch({ headless: true });
 		const page = await browser.newPage();
+		await page.setViewport({ width: 1366, height: 768});
+		await page.setCacheEnabled(false);
+		await page.goto(parsedUrl, {waitUntil: ['load', 'domcontentloaded', 'networkidle0', 'networkidle2'], timeout: 0});
 		
-		await page.goto(`https://${url}`);
-
 		const p = JSON.parse(
 			await page.evaluate(() => JSON.stringify(window.performance.getEntriesByType('navigation')))
 		);
+		const a = JSON.parse(
+			await page.evaluate(() => JSON.stringify(window.performance.getEntriesByType('resource')))
+		);
+		const t = JSON.parse(
+			await page.evaluate(() => JSON.stringify(window.performance.getEntriesByType('paint')))
+		);
+
+		const resourceLoadingComplete = a[a.length - 1].responseEnd.toFixed(2)
+		const numberOfRequests = a.length
+
+		const fcp = t[1].startTime.toFixed(2)
 
 		const perfObj = {
 			responseEnd: p[0].responseEnd.toFixed(2),
@@ -56,26 +104,47 @@ const App: FC<AppTypes> = ({url = 'www.example.com' }) => {
 			domContentLoadedEventEnd: p[0].domContentLoadedEventEnd.toFixed(2),
 			domComplete: p[0].domComplete.toFixed(2),
 			total: p[0].duration.toFixed(2),
+			transferSize: p[0].transferSize.toFixed(2),
+			nextHopProtocol: p[0].nextHopProtocol,
+			requestStart: p[0].requestStart.toFixed(2),
+			responseStart: p[0].responseStart.toFixed(2),
+			resourceLoadingComplete,
+			numberOfRequests,
+			fcp
 		}
-		setResult(perfObj)
+		setR(perfObj)
 		exit()
 	}
 
-	if (result === null) {
+	if (r === null) {
 		getResults()
 		return (
-			<Text color="green">Getting DOM timings for {url}...</Text>
+			<Text color="green">Getting DOM timings for {parsedUrl}...</Text>
 		)
 	}
 
-	if (result !== null) {
-		const { responseEnd, domInteractive, domComplete, domContentLoadedEventStart, domContentLoadedEventEnd, total } = result
+	if (r !== null) {
+		const size = convertBytes(r.transferSize.toString())
 
 		return (
 			<>
 			<Text>
-				URL tested: <Text color="green">{url}</Text>
-				<Newline />
+				URL: <Text color="green">{parsedUrl}</Text>
+			</Text>
+			<Text>
+				Protocol: <Text color="green">{r.nextHopProtocol}</Text>
+			</Text>
+			<Text>
+				Document transfer size: <Text color="green">{size}</Text>
+			</Text>
+			<Text>
+				Resource loading complete: <Text color="green">{r.resourceLoadingComplete}ms</Text>
+			</Text>
+			<Text>
+				Page requests count: <Text color="green">{r.numberOfRequests}</Text>
+			</Text>
+			<Text>
+				First contentful paint: <Text color="green">{r.fcp}ms</Text>
 			</Text>
 
 			<Box>
@@ -88,12 +157,12 @@ const App: FC<AppTypes> = ({url = 'www.example.com' }) => {
 			</Box>
 			
 			<Box>
-				<Box justifyContent="flex-end" width="16.67%"><Text color="cyan">{responseEnd}ms    |</Text></Box>
-				<Box justifyContent="flex-end" width="16.67%"><Text color="cyan">{(domInteractive - responseEnd).toFixed(2)}ms    |</Text></Box>
-				<Box justifyContent="flex-end" width="16.67%"><Text color="cyan">{(domContentLoadedEventStart - domInteractive).toFixed(2)}ms    |</Text></Box>
-				<Box justifyContent="flex-end" width="16.67%"><Text color="cyan">{(domContentLoadedEventEnd - domContentLoadedEventStart).toFixed(2)}ms    |</Text></Box>
-				<Box justifyContent="flex-end" width="16.67%"><Text color="cyan">{(domComplete - domContentLoadedEventEnd).toFixed(2)}ms    |</Text></Box>
-				<Box justifyContent="flex-end" width="16.67%"><Text color="cyan">{(total - domComplete).toFixed(2)}ms    |</Text></Box>
+				<Box justifyContent="flex-end" width="16.67%"><Text color="cyan">{r.responseEnd}ms    |</Text></Box>
+				<Box justifyContent="flex-end" width="16.67%"><Text color="cyan">{(r.domInteractive - r.responseEnd).toFixed(2)}ms    |</Text></Box>
+				<Box justifyContent="flex-end" width="16.67%"><Text color="cyan">{(r.domContentLoadedEventStart - r.domInteractive).toFixed(2)}ms    |</Text></Box>
+				<Box justifyContent="flex-end" width="16.67%"><Text color="cyan">{(r.domContentLoadedEventEnd - r.domContentLoadedEventStart).toFixed(2)}ms    |</Text></Box>
+				<Box justifyContent="flex-end" width="16.67%"><Text color="cyan">{(r.domComplete - r.domContentLoadedEventEnd).toFixed(2)}ms    |</Text></Box>
+				<Box justifyContent="flex-end" width="16.67%"><Text color="cyan">{(r.total - r.domComplete).toFixed(2)}ms    |</Text></Box>
 			</Box>
 			<Box>
 				<Box justifyContent="flex-end" width="16.67%"><Text>|</Text></Box>
@@ -104,7 +173,7 @@ const App: FC<AppTypes> = ({url = 'www.example.com' }) => {
 				<Box justifyContent="flex-end" width="16.67%"><Text>|</Text></Box>
 			</Box>
 			<Box>
-				<Box justifyContent="flex-end" width="16.67%"><Text color="cyan">{responseEnd}ms |</Text></Box>
+				<Box justifyContent="flex-end" width="16.67%"><Text color="cyan">{r.responseEnd}ms |</Text></Box>
 				<Box justifyContent="flex-end" width="16.67%"><Text>|</Text></Box>
 				<Box justifyContent="flex-end" width="16.67%"><Text>|</Text></Box>
 				<Box justifyContent="flex-end" width="16.67%"><Text>|</Text></Box>
@@ -113,7 +182,7 @@ const App: FC<AppTypes> = ({url = 'www.example.com' }) => {
 			</Box>
 			<Box>
 				<Box justifyContent="flex-end" width="16.67%"><Text></Text></Box>
-				<Box justifyContent="flex-end" width="16.67%"><Text color="cyan">{domInteractive}ms |</Text></Box>
+				<Box justifyContent="flex-end" width="16.67%"><Text color="cyan">{r.domInteractive}ms |</Text></Box>
 				<Box justifyContent="flex-end" width="16.67%"><Text>|</Text></Box>
 				<Box justifyContent="flex-end" width="16.67%"><Text>|</Text></Box>
 				<Box justifyContent="flex-end" width="16.67%"><Text>|</Text></Box>
@@ -122,7 +191,7 @@ const App: FC<AppTypes> = ({url = 'www.example.com' }) => {
 			<Box>
 				<Box justifyContent="flex-end" width="16.67%"><Text></Text></Box>
 				<Box justifyContent="flex-end" width="16.67%"><Text></Text></Box>
-				<Box justifyContent="flex-end" width="16.67%"><Text color="cyan">{domContentLoadedEventStart}ms |</Text></Box>
+				<Box justifyContent="flex-end" width="16.67%"><Text color="cyan">{r.domContentLoadedEventStart}ms |</Text></Box>
 				<Box justifyContent="flex-end" width="16.67%"><Text>|</Text></Box>
 				<Box justifyContent="flex-end" width="16.67%"><Text>|</Text></Box>
 				<Box justifyContent="flex-end" width="16.67%"><Text>|</Text></Box>
@@ -131,7 +200,7 @@ const App: FC<AppTypes> = ({url = 'www.example.com' }) => {
 				<Box justifyContent="flex-end" width="16.67%"><Text></Text></Box>
 				<Box justifyContent="flex-end" width="16.67%"><Text></Text></Box>
 				<Box justifyContent="flex-end" width="16.67%"><Text></Text></Box>
-				<Box justifyContent="flex-end" width="16.67%"><Text color="cyan">{domContentLoadedEventEnd}ms |</Text></Box>
+				<Box justifyContent="flex-end" width="16.67%"><Text color="cyan">{r.domContentLoadedEventEnd}ms |</Text></Box>
 				<Box justifyContent="flex-end" width="16.67%"><Text>|</Text></Box>
 				<Box justifyContent="flex-end" width="16.67%"><Text>|</Text></Box>
 			</Box>
@@ -140,7 +209,7 @@ const App: FC<AppTypes> = ({url = 'www.example.com' }) => {
 				<Box justifyContent="flex-end" width="16.67%"><Text></Text></Box>
 				<Box justifyContent="flex-end" width="16.67%"><Text></Text></Box>
 				<Box justifyContent="flex-end" width="16.67%"><Text></Text></Box>
-				<Box justifyContent="flex-end" width="16.67%"><Text color="cyan">{domComplete}ms |</Text></Box>
+				<Box justifyContent="flex-end" width="16.67%"><Text color="cyan">{r.domComplete}ms |</Text></Box>
 				<Box justifyContent="flex-end" width="16.67%"><Text>|</Text></Box>
 			</Box>
 			<Box>
@@ -149,12 +218,10 @@ const App: FC<AppTypes> = ({url = 'www.example.com' }) => {
 				<Box justifyContent="flex-end" width="16.67%"><Text></Text></Box>
 				<Box justifyContent="flex-end" width="16.67%"><Text></Text></Box>
 				<Box justifyContent="flex-end" width="16.67%"><Text></Text></Box>
-				<Box justifyContent="flex-end" width="16.67%"><Text color="cyan">{total}ms |</Text></Box>
+				<Box justifyContent="flex-end" width="16.67%"><Text color="cyan">{r.total}ms |</Text></Box>
 			</Box>
-
 			</>
 		)
-
 	}
 
 	return <></>;
