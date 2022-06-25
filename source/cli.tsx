@@ -11,10 +11,10 @@ const cli = meow(`
 
 	Options
 		--url  String. Url to test. Default is www.example.com
-		--headless  Boolean. Default is true
+		--headless  Boolean. Pass flag to run test in headless mode
 
 	Examples
-	  $ domstat --url=example.com --headless=false
+	  $ domstat --url=example.com --headless
 `, {
 	flags: {
 		url: {
@@ -79,7 +79,7 @@ function convertBytes(x: string): string {
   return(n.toFixed(n < 10 && l > 0 ? 1 : 0) + ' ' + units[l]);
 }
 
-const App: FC<AppTypes> = ({url = 'www.example.com', headless = true }) => {
+const App: FC<AppTypes> = ({url = 'www.example.com', headless }) => {
 	const [r, setR] = React.useState<null | PerfObj>(null)
 	const { exit } = useApp()
 	const parsedUrl = setUrl(url)
@@ -185,12 +185,12 @@ const App: FC<AppTypes> = ({url = 'www.example.com', headless = true }) => {
 			<Text>
 				Document transfer size: <Text color="green">{size || ''}</Text>
 			</Text>
-			<Text>
+			{r.resourceLoadingComplete !== 0 && <Text>
 				Resource loading complete: <Text color="green">{r.resourceLoadingComplete}ms</Text>
-			</Text>
-			<Text>
+			</Text>}
+			{r.numberOfRequests !== 0 && <Text>
 				Requests: <Text color="green">{r.numberOfRequests || 0}</Text>
-			</Text>
+			</Text>}
 			<Text>
 				First contentful paint: <Text color="green">{r.fcp}ms</Text>
 			</Text>
@@ -285,7 +285,7 @@ const App: FC<AppTypes> = ({url = 'www.example.com', headless = true }) => {
 	const { waitUntilExit, unmount } = render(
 		<App 
 			url={cli.flags.url}
-			headless={cli.flags.headless} 
+			headless={cli.flags.headless}
 		/>
 	);
 	await waitUntilExit()

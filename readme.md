@@ -24,10 +24,10 @@ $ domstat --help
 	  $ domstat
 
 	Options
-		--url  string (optional). Url to test. Default = www.example.com
-		--headless  boolean (optional). Puppeteer mode. Default = true
+		--url  String. Url to test. Default is www.example.com
+		--headless  Boolean. Pass flag to run test in headless mode
 
 	Examples
-	  $ domstat --url=example.com --headless=false
+	  $ domstat --url=example.com --headless
 
 ```
