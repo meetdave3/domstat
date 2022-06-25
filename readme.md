@@ -21,11 +21,13 @@ $ npm install --global domstat
 $ domstat --help
 
   Usage
-    $ domstat
+	  $ domstat
 
-  Options
-    --url  URL to test
+	Options
+		--url  string (optional). Url to test. Default = www.example.com
+		--headless  boolean (optional). Puppeteer mode. Default = true
 
-  Examples
-    $ domstat --url=www.example.com
+	Examples
+	  $ domstat --url=example.com --headless=false
+
 ```
