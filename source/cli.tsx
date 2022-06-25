@@ -10,20 +10,25 @@ const cli = meow(`
 	  $ domstat
 
 	Options
-		--url  Url to test
+		--url  String. Url to test. Default is www.example.com
+		--headless  Boolean. Default is true
 
 	Examples
-	  $ domstat --url=example.com
+	  $ domstat --url=example.com --headless=false
 `, {
 	flags: {
 		url: {
 			type: 'string'
+		},
+		headless: {
+			type: 'boolean'
 		}
 	}
 });
 
 type AppTypes = {
 	url?: string
+	headless?: boolean
 }
 
 type PerfObj = {
@@ -74,13 +79,13 @@ function convertBytes(x: string): string {
   return(n.toFixed(n < 10 && l > 0 ? 1 : 0) + ' ' + units[l]);
 }
 
-const App: FC<AppTypes> = ({url = 'www.example.com' }) => {
+const App: FC<AppTypes> = ({url = 'www.example.com', headless = true }) => {
 	const [r, setR] = React.useState<null | PerfObj>(null)
 	const { exit } = useApp()
 	const parsedUrl = setUrl(url)
 
 	async function getResults() {
-		const browser = await puppeteer.launch({ headless: true });
+		const browser = await puppeteer.launch({ headless });
 		const page = await browser.newPage();
 		await page.setViewport({ width: 1366, height: 768});
 		await page.setCacheEnabled(false);
@@ -190,10 +195,10 @@ const App: FC<AppTypes> = ({url = 'www.example.com' }) => {
 				First contentful paint: <Text color="green">{r.fcp}ms</Text>
 			</Text>
 			<Text>
-				Total Javscript size / Coverage (used bytes): <Text color="green">{r.totalJsBytes} / {r.jsCoveragePerc}%</Text>
+				Total Javscript size / Coverage (% bytes used): <Text color="green">{r.totalJsBytes} / {r.jsCoveragePerc}%</Text>
 			</Text>
 			<Text>
-				Total CSS size / Coverage (used bytes): <Text color="green">{r.totalCssBytes} / {r.cssCoveragePerc}%</Text>
+				Total CSS size / Coverage (% bytes used): <Text color="green">{r.totalCssBytes} / {r.cssCoveragePerc}%</Text>
 			</Text>
 
 			<Box>
@@ -277,7 +282,12 @@ const App: FC<AppTypes> = ({url = 'www.example.com' }) => {
 }
 
 (async function () {
-	const { waitUntilExit, unmount } = render(<App url={cli.flags.url}/>);
+	const { waitUntilExit, unmount } = render(
+		<App 
+			url={cli.flags.url}
+			headless={cli.flags.headless} 
+		/>
+	);
 	await waitUntilExit()
 	await unmount()
 	process.exit()
